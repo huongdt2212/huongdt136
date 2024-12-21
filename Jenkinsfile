@@ -1,49 +1,38 @@
 pipeline {
     agent any
-
-    environment {
-        // Define environment variables if needed
-        MY_ENV_VAR = "some_value"
-    }
-
     stages {
-        stage('Build') {
+        stage('Clone Repository') {
             steps {
-                echo 'Building the application...'
-                // Replace with actual build commands, e.g., for a Java project
-                // sh 'mvn clean install'   // For example, using Maven
+                echo 'Cloning repository...'
+                checkout scm
             }
         }
-
-        stage('Test') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Running tests...'
-                // Replace with your test command, e.g., for a Node.js project
-                // sh 'npm test'            // For example, running tests with npm
+                echo 'Building Docker image...'
+                sh 'docker build -t my-web-app .'
             }
         }
-
-        stage('Deploy') {
+        stage('Run Docker Container') {
             steps {
-                echo 'Deploying the application...'
-                // Replace with actual deployment command, e.g., to AWS, Kubernetes, etc.
-                // sh './deploy.sh'         // Custom deploy script or commands
+                echo 'Running Docker container...'
+                sh '''
+                docker stop my-web-app || true
+                docker rm my-web-app || true
+                docker run -d --name my-web-app -p 8090:80 my-web-app
+                '''
             }
         }
     }
-
-
-
-    
     post {
+        always {
+            echo 'Pipeline completed.'
+        }
         success {
-            echo 'Pipeline completed successfully.'
+            echo 'Application deployed successfully!'
         }
         failure {
-            echo 'Pipeline failed.'
-        }
-        always {
-            echo 'This will run regardless of the outcome.'
+            echo 'Pipeline failed!'
         }
     }
 }
